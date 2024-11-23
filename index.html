@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timer với Màn hình LCD 7-Segment</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Timer 7-Segment</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <div class="lcd">
-            <div id="timeDisplay" class="time">00:00:00</div>
-        </div>
+    <div id="timer">
+        <!-- 7-segment display container -->
+        <div class="seven-segment" id="digit1"></div>
+        <div class="seven-segment" id="digit2"></div>
+        <div class="seven-segment" id="digit3"></div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
