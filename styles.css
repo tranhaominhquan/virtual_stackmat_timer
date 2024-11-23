@@ -1,0 +1,27 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #000;
+  }
+  
+  .container {
+    text-align: center;
+  }
+  
+  #lcd {
+    background-color: #222;
+    color: #fff;
+    font-size: 48px;
+    padding: 20px;
+    border-radius: 10px;
+    display: inline-block;
+  }
+  
+  #time {
+    font-family: 'Courier New', Courier, monospace;
+  }
+  
