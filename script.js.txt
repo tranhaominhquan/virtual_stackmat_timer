@@ -1,0 +1,37 @@
+let timerInterval;
+let running = false;
+let startTime = 0;
+let elapsedTime = 0;
+
+function toggleTimer() {
+    if (running) {
+        clearInterval(timerInterval);
+        document.getElementById('startStopButton').textContent = 'Bắt đầu';
+    } else {
+        startTime = Date.now() - elapsedTime;
+        timerInterval = setInterval(updateTimer, 10);
+        document.getElementById('startStopButton').textContent = 'Dừng lại';
+    }
+    running = !running;
+}
+
+function updateTimer() {
+    elapsedTime = Date.now() - startTime;
+    const seconds = Math.floor(elapsedTime / 1000) % 60;
+    const minutes = Math.floor(elapsedTime / (1000 * 60)) % 60;
+    const hours = Math.floor(elapsedTime / (1000 * 60 * 60)) % 24;
+
+    document.getElementById('timer').textContent = formatTime(hours) + ":" + formatTime(minutes) + ":" + formatTime(seconds);
+}
+
+function formatTime(time) {
+    return time < 10 ? "0" + time : time;
+}
+
+function resetTimer() {
+    clearInterval(timerInterval);
+    running = false;
+    elapsedTime = 0;
+    document.getElementById('timer').textContent = '00:00:00';
+    document.getElementById('startStopButton').textContent = 'Bắt đầu';
+}
