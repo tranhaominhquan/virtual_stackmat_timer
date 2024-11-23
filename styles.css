@@ -1,18 +1,20 @@
 body {
     font-family: Arial, sans-serif;
+    background-color: #282c34;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
     margin: 0;
-    background-color: #f3f3f3;
 }
 
-.timer-container {
+#timer-container {
     text-align: center;
 }
 
 #timer {
-    font-size: 5em;
-    color: #333;
+    color: white;
+    font-size: 100px;
+    font-weight: bold;
+    margin: 0;
 }
