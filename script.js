@@ -1,66 +1,65 @@
-// Kiểm tra hỗ trợ microphone và nhận dữ liệu từ microphone
-navigator.mediaDevices.getUserMedia({ audio: true })
-    .then(function(stream) {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const analyser = audioContext.createAnalyser();
-        const microphone = audioContext.createMediaStreamSource(stream);
-        microphone.connect(analyser);
-        
-        let audioData = new Uint8Array(analyser.frequencyBinCount);
-        
-        function updateAudioData() {
-            analyser.getByteFrequencyData(audioData);
-            
-            let peak = 0;
-            for (let i = 0; i < audioData.length; i++) {
-                if (audioData[i] > peak) peak = audioData[i];
-            }
-            
-            // Kiểm tra nếu có tín hiệu âm thanh lớn đủ để nhận dạng (ví dụ: tiếng vỗ tay)
-            if (peak > 100) {
-                startTimer();
-            } else {
-                stopTimer();
-            }
+// Kiểm tra nếu trình duyệt hỗ trợ SpeechRecognition
+if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'vi-VN'; // Thiết lập ngôn ngữ tiếng Việt
+    recognition.interimResults = false; // Không hiển thị kết quả tạm thời
+    recognition.maxAlternatives = 1; // Chỉ lấy kết quả duy nhất
 
-            requestAnimationFrame(updateAudioData);
+    let timerRunning = false; // Cờ để theo dõi trạng thái đồng hồ
+    let startTime = 0; // Thời gian bắt đầu
+    let currentTime = 0; // Thời gian hiện tại
+    let timerInterval; // Biến lưu interval của đồng hồ
+
+    // Hàm bắt đầu hoặc dừng đồng hồ
+    function toggleTimer() {
+        if (!timerRunning) {
+            startTime = Date.now() - currentTime; // Thiết lập thời gian bắt đầu
+            timerInterval = setInterval(updateTimer, 10); // Cập nhật đồng hồ mỗi 10ms
+            timerRunning = true;
+        } else {
+            clearInterval(timerInterval); // Dừng đồng hồ
+            timerRunning = false;
         }
+    }
 
-        updateAudioData();
+    // Cập nhật đồng hồ
+    function updateTimer() {
+        currentTime = Date.now() - startTime; // Tính thời gian đã trôi qua
+        document.getElementById('timer').textContent = formatTime(currentTime); // Cập nhật hiển thị
+    }
 
-        let startTime = 0;
-        let timerInterval;
-        let running = false;
+    // Hàm định dạng thời gian theo phút:giây.mili
+    function formatTime(ms) {
+        let seconds = Math.floor(ms / 1000);
+        let minutes = Math.floor(seconds / 60);
+        seconds = seconds % 60;
+        ms = ms % 1000;
 
-        function startTimer() {
-            if (!running) {
-                running = true;
-                startTime = Date.now() - (startTime || 0);
-                timerInterval = setInterval(updateTimer, 10);
-                document.getElementById('status').textContent = 'Đang đếm...';
-            }
+        return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}.${Math.floor(ms / 10)}`;
+    }
+
+    // Lắng nghe kết quả nhận dạng giọng nói
+    recognition.onresult = function(event) {
+        const speech = event.results[0][0].transcript.toLowerCase();
+
+        // Kiểm tra lệnh "bắt đầu" hoặc "dừng"
+        if (speech.includes("bắt đầu") && !timerRunning) {
+            toggleTimer(); // Bắt đầu hoặc dừng đồng hồ
+        } else if (speech.includes("dừng") && timerRunning) {
+            toggleTimer(); // Dừng đồng hồ
         }
+    };
 
-        function stopTimer() {
-            if (running) {
-                clearInterval(timerInterval);
-                running = false;
-                document.getElementById('status').textContent = 'Dừng lại.';
-            }
-        }
+    recognition.onerror = function(event) {
+        console.error("Lỗi trong quá trình nhận dạng: ", event.error);
+    };
 
-        function updateTimer() {
-            const elapsed = Date.now() - startTime;
-            const minutes = Math.floor(elapsed / 60000);
-            const seconds = Math.floor((elapsed % 60000) / 1000);
-            const milliseconds = Math.floor((elapsed % 1000) / 10);
-            document.getElementById('timer').textContent = `${padZero(minutes)}:${padZero(seconds)}.${padZero(milliseconds)}`;
-        }
+    recognition.onspeechend = function() {
+        recognition.start(); // Tiếp tục lắng nghe sau khi nhận dạng xong
+    };
 
-        function padZero(num) {
-            return num < 10 ? '0' + num : num;
-        }
-    })
-    .catch(function(err) {
-        console.log("Không thể truy cập microphone: ", err);
-    });
+    // Bắt đầu nhận diện giọng nói
+    recognition.start();
+} else {
+    alert("Trình duyệt của bạn không hỗ trợ SpeechRecognition API.");
+}
