@@ -1,57 +1,101 @@
-// Lấy tham chiếu tới các phần tử trong giao diện
-const statusElement = document.getElementById("status");
-const timeElement = document.getElementById("time");
+const segments = [
+    [true, true, true, false, true, true, true], // 0
+    [false, false, true, false, false, true, false], // 1
+    [true, false, true, true, true, false, true], // 2
+    [true, false, true, true, false, true, true], // 3
+    [false, true, true, true, false, true, true], // 4
+    [true, true, false, true, false, true, true], // 5
+    [true, true, false, true, true, true, true], // 6
+    [true, false, true, false, false, true, false], // 7
+    [true, true, true, true, true, true, true], // 8
+    [true, true, true, true, false, true, true], // 9
+];
 
-let isTimerStarted = false;
-let startTime = null;
+let timerDisplay = document.getElementById('timer');
+let statusDisplay = document.getElementById('status');
+let isRecording = false;
+let startTime, elapsedTime = 0, interval;
 
-// Kiểm tra quyền truy cập micro
-if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-  statusElement.textContent = "Trình duyệt của bạn không hỗ trợ micro!";
-} else {
-  statusElement.textContent = "Đang kích hoạt micro...";
-  navigator.mediaDevices
-    .getUserMedia({ audio: true })
-    .then((stream) => {
-      statusElement.textContent = "Micro đã kết nối!";
-
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const analyser = audioContext.createAnalyser();
-      const source = audioContext.createMediaStreamSource(stream);
-
-      source.connect(analyser);
-
-      // Phân tích dữ liệu từ micro
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-      function processAudio() {
-        analyser.getByteFrequencyData(dataArray);
-
-        // Mô phỏng nhận tín hiệu bắt đầu bằng âm thanh mạnh (có thể thay thế bằng thuật toán phân tích tín hiệu âm thanh thực tế)
-        const signalStrength = dataArray.reduce((acc, val) => acc + val, 0); // Tổng giá trị tín hiệu âm thanh
-        const threshold = 1000; // Ngưỡng tín hiệu âm thanh
-
-        if (signalStrength > threshold && !isTimerStarted) {
-          // Khi tín hiệu đủ mạnh và timer chưa bắt đầu, bắt đầu đồng hồ
-          isTimerStarted = true;
-          startTime = Date.now();
+// Các function điều khiển các segment của đồng hồ 7-segment
+const updateSegments = (digitId, segmentsState) => {
+    const digit = document.getElementById(digitId);
+    const segmentIds = ['top', 'top-right', 'bottom-right', 'bottom', 'bottom-left', 'top-left', 'middle'];
+    segmentIds.forEach((segment, index) => {
+        const segmentDiv = digit.querySelector(`.${segment}`);
+        if (segmentsState[index]) {
+            segmentDiv.classList.add('on');
+            segmentDiv.classList.remove('off');
+        } else {
+            segmentDiv.classList.add('off');
+            segmentDiv.classList.remove('on');
         }
-
-        if (isTimerStarted) {
-          const elapsedTime = Date.now() - startTime;
-          const seconds = Math.floor(elapsedTime / 1000);
-          const milliseconds = elapsedTime % 1000;
-          const timeFormatted = `${String(seconds).padStart(2, "0")}:${String(milliseconds).padStart(3, "0")}`;
-
-          timeElement.textContent = timeFormatted;
-        }
-
-        requestAnimationFrame(processAudio);
-      }
-
-      processAudio();
-    })
-    .catch((error) => {
-      statusElement.textContent = "Không thể truy cập micro: " + error.message;
     });
-}
+};
+
+// Hàm cập nhật thời gian hiển thị
+const updateTime = () => {
+    elapsedTime = Date.now() - startTime;
+    let minutes = Math.floor(elapsedTime / 60000);
+    let seconds = Math.floor((elapsedTime % 60000) / 1000);
+    let milliseconds = Math.floor((elapsedTime % 1000) / 10);
+
+    minutes = (minutes < 10) ? '0' + minutes : minutes;
+    seconds = (seconds < 10) ? '0' + seconds : seconds;
+    milliseconds = (milliseconds < 10) ? '0' + milliseconds : milliseconds;
+
+    // Cập nhật các chữ số
+    updateSegments('digit-1', segments[parseInt(minutes[0])]);
+    updateSegments('digit-2', segments[parseInt(minutes[1])]);
+    updateSegments('digit-3', segments[parseInt(seconds[0])]);
+    updateSegments('digit-4', segments[parseInt(seconds[1])]);
+};
+
+const startTimer = () => {
+    startTime = Date.now() - elapsedTime;
+    interval = setInterval(updateTime, 10);
+    statusDisplay.textContent = "Đang ghi nhận...";
+};
+
+const stopTimer = () => {
+    clearInterval(interval);
+    statusDisplay.textContent = "Dừng ghi nhận.";
+};
+
+const startListening = () => {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(stream => {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaStreamSource(stream);
+        source.connect(analyser);
+        analyser.fftSize = 256;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        const detectSignal = () => {
+            analyser.getByteFrequencyData(dataArray);
+            let sum = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                sum += dataArray[i];
+            }
+
+            if (sum > 5000 && !isRecording) {
+                isRecording = true;
+                startTimer();
+            } else if (sum < 5000 && isRecording) {
+                isRecording = false;
+                stopTimer();
+            }
+
+            requestAnimationFrame(detectSignal);
+        };
+        
+        detectSignal();
+    })
+    .catch(err => {
+        statusDisplay.textContent = "Không thể truy cập microphone.";
+        console.error(err);
+    });
+};
+
+startListening();

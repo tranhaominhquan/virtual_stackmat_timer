@@ -1,34 +1,65 @@
 body {
     font-family: Arial, sans-serif;
-    background-color: #f0f8ff;
+    background-color: #f4f4f9;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
     margin: 0;
-  }
-  
-  .container {
+}
+
+.timer-container {
     text-align: center;
-    background-color: #ffffff;
+    border: 2px solid #333;
     padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-  
-  h1 {
+    background-color: white;
+    border-radius: 10px;
+}
+
+#timer {
+    display: flex;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 100px;
+    gap: 10px;
+    align-items: center;
+}
+
+.digit {
+    display: flex;
+    flex-wrap: wrap;
+    width: 60px;
+    height: 120px;
+    position: relative;
+    justify-content: space-between;
+    align-content: space-between;
+}
+
+.digit div {
+    width: 30px;
+    height: 10px;
+    background-color: #333;
+    position: absolute;
+    transition: all 0.2s ease;
+}
+
+.digit .top { top: 0; left: 0; right: 0; }
+.digit .top-right { top: 0; right: 0; }
+.digit .bottom-right { bottom: 0; right: 0; }
+.digit .bottom { bottom: 0; left: 0; right: 0; }
+.digit .bottom-left { bottom: 0; left: 0; }
+.digit .top-left { top: 0; left: 0; }
+.digit .middle { top: 50%; left: 0; right: 0; }
+
+.colon {
+    font-size: 100px;
+    font-weight: bold;
     color: #333;
-  }
-  
-  #status {
-    color: #888;
-    margin-bottom: 20px;
-  }
-  
-  /* Áp dụng font 7-segment cho thời gian */
-  #time {
-    font-size: 3rem;
-    font-family: 'Digital-7 Mono';
-    color: #0078d7;
-  }
-  
+}
+
+.digit.on div {
+    background-color: #f00; /* Red when active */
+}
+
+.digit.off div {
+    background-color: #333; /* Dark when inactive */
+}
