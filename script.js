@@ -2,6 +2,9 @@
 const statusElement = document.getElementById("status");
 const timeElement = document.getElementById("time");
 
+let isTimerStarted = false;
+let startTime = null;
+
 // Kiểm tra quyền truy cập micro
 if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
   statusElement.textContent = "Trình duyệt của bạn không hỗ trợ micro!";
@@ -24,11 +27,24 @@ if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       function processAudio() {
         analyser.getByteFrequencyData(dataArray);
 
-        // Giả lập nhận dữ liệu từ timer qua tín hiệu âm thanh
-        // (Đoạn này cần kết hợp với giải thuật xử lý tín hiệu Stackmat thực tế)
-        const simulatedTime = "00:12.345"; // Thay thế bằng dữ liệu thực tế từ tín hiệu micro
+        // Mô phỏng nhận tín hiệu bắt đầu bằng âm thanh mạnh (có thể thay thế bằng thuật toán phân tích tín hiệu âm thanh thực tế)
+        const signalStrength = dataArray.reduce((acc, val) => acc + val, 0); // Tổng giá trị tín hiệu âm thanh
+        const threshold = 1000; // Ngưỡng tín hiệu âm thanh
 
-        timeElement.textContent = simulatedTime;
+        if (signalStrength > threshold && !isTimerStarted) {
+          // Khi tín hiệu đủ mạnh và timer chưa bắt đầu, bắt đầu đồng hồ
+          isTimerStarted = true;
+          startTime = Date.now();
+        }
+
+        if (isTimerStarted) {
+          const elapsedTime = Date.now() - startTime;
+          const seconds = Math.floor(elapsedTime / 1000);
+          const milliseconds = elapsedTime % 1000;
+          const timeFormatted = `${String(seconds).padStart(2, "0")}:${String(milliseconds).padStart(3, "0")}`;
+
+          timeElement.textContent = timeFormatted;
+        }
 
         requestAnimationFrame(processAudio);
       }
