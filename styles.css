@@ -1,0 +1,34 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f8ff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+  
+  .container {
+    text-align: center;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  h1 {
+    color: #333;
+  }
+  
+  #status {
+    color: #888;
+    margin-bottom: 20px;
+  }
+  
+  /* Áp dụng font 7-segment cho thời gian */
+  #time {
+    font-size: 3rem;
+    font-family: 'Digital-7 Mono';
+    color: #0078d7;
+  }
+  
