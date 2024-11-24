@@ -1,67 +1,59 @@
-// Khởi tạo biến timer và các thiết lập
-let startTime;
-let running = false;
-let elapsedTime = 0;
-let timerInterval;
-let isMicActive = false;
+let startTime = null;
+let isRunning = false;
+const timerDisplay = document.getElementById("timer");
+const statusDisplay = document.getElementById("status");
 
-// Hàm chuyển đổi thời gian từ milliseconds thành định dạng phút:giây.mili giây
-function formatTime(ms) {
-    const minutes = Math.floor(ms / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
-    const milliseconds = ms % 1000;
-    return `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}.${milliseconds < 100 ? '0' : ''}${milliseconds}`;
-}
-
-// Cập nhật đồng hồ
-function updateTimer() {
-    elapsedTime = Date.now() - startTime;
-    document.getElementById("timer").textContent = formatTime(elapsedTime);
-}
-
-// Bắt đầu hoặc dừng timer
-function startStopTimer() {
-    if (!running) {
-        startTime = Date.now() - elapsedTime;
-        timerInterval = setInterval(updateTimer, 10);
-        running = true;
-    } else {
-        clearInterval(timerInterval);
-        running = false;
+document.addEventListener("keydown", () => {
+    if (!isRunning) {
+        startMicrophone();
     }
-}
+});
 
-// Lắng nghe sự kiện microphone
-async function listenMicrophone() {
+async function startMicrophone() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const analyser = audioContext.createAnalyser();
         const microphone = audioContext.createMediaStreamSource(stream);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 2048;
         microphone.connect(analyser);
-        
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-        
-        analyser.getByteFrequencyData(dataArray);
-        
-        setInterval(() => {
-            let sum = 0;
-            for (let i = 0; i < bufferLength; i++) {
-                sum += dataArray[i];
-            }
+        const dataArray = new Uint8Array(analyser.fftSize);
 
-            if (sum > 1000 && !isMicActive) {  // Nếu có tiếng động lớn, kích hoạt
-                isMicActive = true;
-                startStopTimer();  // Bắt đầu hoặc dừng timer
-            } else if (sum < 1000 && isMicActive) {  // Nếu không có tiếng động, dừng
-                isMicActive = false;
-            }
-        }, 100);
+        statusDisplay.textContent = "Micro đang hoạt động. Đợi tín hiệu âm thanh...";
+        isRunning = true;
+
+        detectSound(analyser, dataArray);
     } catch (err) {
-        console.error("Không thể truy cập microphone: ", err);
+        statusDisplay.textContent = "Không thể truy cập micro: " + err.message;
+        console.error(err);
     }
 }
 
-// Lắng nghe microphone khi trang tải
-window.onload = listenMicrophone;
+function detectSound(analyser, dataArray) {
+    const detectThreshold = 100;
+    const interval = 50; // 50ms
+
+    const checkSound = () => {
+        analyser.getByteTimeDomainData(dataArray);
+        const volume = dataArray.reduce((sum, value) => sum + Math.abs(value - 128), 0) / dataArray.length;
+
+        if (volume > detectThreshold) {
+            if (!startTime) {
+                startTime = performance.now();
+                statusDisplay.textContent = "Đang tính giờ...";
+            } else {
+                const elapsed = (performance.now() - startTime) / 1000;
+                timerDisplay.textContent = elapsed.toFixed(2);
+                statusDisplay.textContent = "Đã dừng tính giờ.";
+                startTime = null;
+                isRunning = false;
+            }
+        }
+
+        if (isRunning) {
+            setTimeout(checkSound, interval);
+        }
+    };
+
+    checkSound();
+}
